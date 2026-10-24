@@ -162,6 +162,23 @@ footer{text-align:center;margin-top:2rem;font-size:.75rem;color:var(--muted)}
 .g-ex .g-fb.ok{color:var(--ok)}.g-ex .g-fb.bad{color:var(--bad)}
 .g-ex .g-explain{margin-top:.25rem;font-size:.85rem;color:var(--muted);font-weight:500}
 .g-score{margin-top:.75rem;padding:.75rem;background:var(--blue-s);border-radius:10px;font-weight:700;color:var(--blue)}
+.g-prompt{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.55rem}
+.g-order-slots{display:flex;flex-wrap:wrap;gap:.4rem;min-height:2.6rem;padding:.55rem .65rem;margin-bottom:.55rem;
+  background:#fff;border:2px dashed var(--border);border-radius:12px;align-items:center}
+.g-order-slots.is-ok{border-color:var(--ok);background:#f3faf6}
+.g-order-slots.is-bad{border-color:var(--bad);background:#fff6f5}
+.g-slot{display:inline-flex;align-items:center;justify-content:center;min-width:2.4rem;min-height:2.1rem;
+  padding:.3rem .65rem;border-radius:999px;font-weight:800;font-size:.95rem}
+.g-slot.empty{border:1px dashed #c5d5e2;color:transparent;background:var(--blue-s);min-width:2.8rem}
+.g-slot.filled{background:var(--blue);color:#fff;cursor:pointer;border:none}
+.g-slot.filled:hover{background:var(--blue-d)}
+.g-order-bank{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.45rem}
+.g-chip{border:none;cursor:pointer;padding:.4rem .8rem;border-radius:999px;font:inherit;font-weight:800;
+  background:var(--yellow);color:var(--blue-d);box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.g-chip:hover{filter:brightness(.97)}
+.g-chip:disabled,.g-slot.filled:disabled{opacity:.55;cursor:default;filter:none}
+.g-order-actions{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.25rem}
+.g-order-actions .btn{padding:.4rem .8rem;font-size:.85rem}
 @media(max-width:720px){
   .grammar-layout{grid-template-columns:1fr}
   .grammar-nav{position:static;display:flex;flex-wrap:wrap;gap:.25rem;padding:.45rem}
@@ -239,6 +256,9 @@ const I18N = {
     grammarCorrect: "正确",
     grammarAnswer: "正确答案：",
     grammarFillHint: "在方框中填入正确形式；括号内为原形提示",
+    grammarOrderHint: "根据中文提示，点击下方单词按正确顺序组成瑞典语句子。",
+    grammarClear: "清空重做",
+    grammarWrong: "不正确",
     pickCount: "选择单词数量",
     confirm: "确定",
     wordList: "单词列表",
@@ -329,6 +349,9 @@ const I18N = {
     grammarCorrect: "Correct",
     grammarAnswer: "Correct answer: ",
     grammarFillHint: "Type the correct form in the box; the lemma is shown in parentheses",
+    grammarOrderHint: "Using the prompt, tap the words below in the correct Swedish order.",
+    grammarClear: "Clear",
+    grammarWrong: "Incorrect",
     pickCount: "Word count",
     confirm: "OK",
     wordList: "Word list",
@@ -427,6 +450,7 @@ const state = {
   grammarTopic: "nouns",
   grammarAnswers: {},
   grammarChecked: {},
+  grammarOrder: {},
   flashMode: "cn2sv", // cn2sv | sv2cn | spell  (cn2sv means meaning→SV)
   practiceSource: "main",
   batch: [],
@@ -1903,12 +1927,11 @@ const GRAMMAR_TOPICS = [
       }
     },
     exercises: [
-      { pre:"Jag ", post:" frukost.", lemma:"äta", gloss:{zh:"我吃早餐。", en:"I eat breakfast."}, answer:["äter"], explain:{zh:"正常语序：主语后紧接动词。", en:"Neutral order: verb right after the subject."} },
-      { pre:"Idag ", post:" jag frukost.", lemma:"äta", gloss:{zh:"今天我吃早餐。", en:"Today I eat breakfast."}, answer:["äter"], explain:{zh:"时间提前时动词仍在第二位。", en:"With time fronted, the verb stays in second place."} },
-      { pre:"På morgonen ", post:" jag kaffe.", lemma:"dricka", gloss:{zh:"早上我喝咖啡。", en:"In the morning I drink coffee."}, answer:["dricker"], explain:{zh:"状语提前：动词第二，主语在后。", en:"Fronted adverbial: verb second, subject after."} },
-      { pre:"Igår ", post:" hon hem.", lemma:"gå", gloss:{zh:"昨天她回家了。", en:"Yesterday she went home."}, answer:["gick"], explain:{zh:"过去时同样遵守 V2。", en:"Past tense still follows V2."} },
-      { pre:"Nu ", post:" vi svenska.", lemma:"tala", gloss:{zh:"现在我们说瑞典语。", en:"Now we speak Swedish."}, answer:["talar"], explain:{zh:"Nu 占第一位，动词占第二位。", en:"Nu is first; the verb is second."} },
-      { pre:"I Sverige ", post:" det kallt.", lemma:"vara", gloss:{zh:"在瑞典天气冷。", en:"In Sweden it is cold."}, answer:["är"], explain:{zh:"地点提前时仍是 V2：är 在第二位。", en:"With place fronted, är still sits in second place."} }
+      { type:"order", gloss:{zh:"我今天吃早餐。", en:"I eat breakfast today."}, words:["frukost", "idag", "jag", "äter"], answer:"Idag äter jag frukost.", explain:{zh:"时间状语提前时，动词仍在第二位：Idag äter jag…", en:"When a fronted adverbial comes first, the verb stays in second position: Idag äter jag…"} },
+      { type:"order", gloss:{zh:"早上我喝咖啡。", en:"In the morning I drink coffee."}, words:["kaffe", "på", "jag", "morgonen", "dricker"], answer:"På morgonen dricker jag kaffe.", explain:{zh:"介词短语提前后，动词仍第二位：På morgonen dricker jag…", en:"After a fronted prepositional phrase, the verb is still second: På morgonen dricker jag…"} },
+      { type:"order", gloss:{zh:"他昨天来了。", en:"He came yesterday."}, words:["igår", "kom", "han"], answer:"Igår kom han.", explain:{zh:"igår 提前，动词 kom 在第二位，主语后移。", en:"With igår first, the verb kom is second and the subject follows."} },
+      { type:"order", gloss:{zh:"我们在公园散步。", en:"We walk in the park."}, words:["i", "vi", "parken", "går"], answer:"I parken går vi.", explain:{zh:"地点提前时仍是 V2：I parken går vi。", en:"Fronted place still keeps V2: I parken går vi."} },
+      { type:"order", gloss:{zh:"她现在很忙。", en:"She is busy now."}, words:["upptagen", "är", "nu", "hon"], answer:"Nu är hon upptagen.", explain:{zh:"nu 提前，系动词 är 在第二位。", en:"With nu first, the verb är is second."} }
     ]
   },
   {
@@ -1995,12 +2018,11 @@ const GRAMMAR_TOPICS = [
       }
     },
     exercises: [
-      { pre:"", post:" du frukost?", lemma:"äta", gloss:{zh:"你吃早餐吗？", en:"Do you eat breakfast?"}, answer:["Äter","äter"], explain:{zh:"是非问：动词提前。", en:"Yes/no question: front the verb."} },
-      { pre:"", post:" du simma?", lemma:"kunna", gloss:{zh:"你会游泳吗？", en:"Can you swim?"}, answer:["Kan","kan"], explain:{zh:"情态动词同样提前。", en:"Modals also front."} },
-      { pre:"", post:" äter du?", lemma:"vad", gloss:{zh:"你吃什么？", en:"What are you eating?"}, answer:["Vad","vad"], explain:{zh:"特殊疑问：疑问词 + 动词 + 主语。", en:"Wh-question: wh-word + verb + subject."} },
-      { pre:"", post:" bor du?", lemma:"var", gloss:{zh:"你住在哪里？", en:"Where do you live?"}, answer:["Var","var"], explain:{zh:"var 询问地点。", en:"var asks for place."} },
-      { pre:"", post:" kommer han?", lemma:"när", gloss:{zh:"他什么时候来？", en:"When is he coming?"}, answer:["När","när"], explain:{zh:"när 询问时间。", en:"när asks for time."} },
-      { pre:"", post:" gör du?", lemma:"vad", gloss:{zh:"你在做什么？", en:"What are you doing?"}, answer:["Vad","vad"], explain:{zh:"Vad gör du? 是常用特殊疑问句。", en:"Vad gör du? is a common wh-question."} }
+      { type:"order", gloss:{zh:"你吃早餐吗？", en:"Do you eat breakfast?"}, words:["du", "frukost", "äter"], answer:"Äter du frukost?", explain:{zh:"是非问句：动词直接提前。", en:"Yes/no question: the verb comes first."} },
+      { type:"order", gloss:{zh:"你会游泳吗？", en:"Can you swim?"}, words:["simma", "du", "kan"], answer:"Kan du simma?", explain:{zh:"情态动词提前构成疑问。", en:"The modal verb moves to the front for the question."} },
+      { type:"order", gloss:{zh:"你吃什么？", en:"What do you eat?"}, words:["du", "vad", "äter"], answer:"Vad äter du?", explain:{zh:"特殊疑问句：疑问词 + 动词 + 主语。", en:"Wh-question: question word + verb + subject."} },
+      { type:"order", gloss:{zh:"你住在哪里？", en:"Where do you live?"}, words:["bor", "var", "du"], answer:"Var bor du?", explain:{zh:"Var + 动词 + 主语。", en:"Var + verb + subject."} },
+      { type:"order", gloss:{zh:"他什么时候来？", en:"When is he coming?"}, words:["kommer", "när", "han"], answer:"När kommer han?", explain:{zh:"När + 动词 + 主语。", en:"När + verb + subject."} }
     ]
   },
   {
@@ -2071,12 +2093,11 @@ const GRAMMAR_TOPICS = [
       }
     },
     exercises: [
-      { pre:"Jag äter ", post:" kött.", lemma:"inte", gloss:{zh:"我不吃肉。", en:"I do not eat meat."}, answer:["inte"], explain:{zh:"主句中 inte 在动词之后。", en:"In main clauses, inte follows the verb."} },
-      { pre:"Hon kan ", post:" komma.", lemma:"inte", gloss:{zh:"她不能来。", en:"She cannot come."}, answer:["inte"], explain:{zh:"情态动词后接 inte。", en:"inte follows the modal."} },
-      { pre:"Jag har ", post:" ätit.", lemma:"inte", gloss:{zh:"我还没吃。", en:"I have not eaten."}, answer:["inte"], explain:{zh:"完成时：har inte + 仰卧。", en:"Perfect: har inte + supine."} },
-      { pre:"Vi bor ", post:" i Stockholm.", lemma:"inte", gloss:{zh:"我们不住在斯德哥尔摩。", en:"We do not live in Stockholm."}, answer:["inte"], explain:{zh:"bor inte：动词后否定。", en:"bor inte: negation after the verb."} },
-      { pre:"Han vill ", post:" gå.", lemma:"inte", gloss:{zh:"他不想走。", en:"He does not want to go."}, answer:["inte"], explain:{zh:"vill inte：情态 + inte。", en:"vill inte: modal + inte."} },
-      { pre:"De talar ", post:" svenska.", lemma:"inte", gloss:{zh:"他们不说瑞典语。", en:"They do not speak Swedish."}, answer:["inte"], explain:{zh:"talar inte：定式动词后放 inte。", en:"talar inte: put inte after the finite verb."} }
+      { type:"order", gloss:{zh:"我不吃肉。", en:"I don't eat meat."}, words:["kött", "inte", "äter", "jag"], answer:"Jag äter inte kött.", explain:{zh:"主句中 inte 放在动词之后。", en:"In a main clause, inte comes after the verb."} },
+      { type:"order", gloss:{zh:"她不能来。", en:"She can't come."}, words:["komma", "inte", "kan", "hon"], answer:"Hon kan inte komma.", explain:{zh:"inte 在情态动词后、不定式前。", en:"inte follows the modal and precedes the infinitive."} },
+      { type:"order", gloss:{zh:"我还没吃。", en:"I haven't eaten."}, words:["ätit", "inte", "har", "jag"], answer:"Jag har inte ätit.", explain:{zh:"完成时：har + inte + supinum。", en:"Perfect: har + inte + supine."} },
+      { type:"order", gloss:{zh:"他不住在这里。", en:"He doesn't live here."}, words:["här", "inte", "bor", "han"], answer:"Han bor inte här.", explain:{zh:"inte 紧跟动词。", en:"inte comes right after the verb."} },
+      { type:"order", gloss:{zh:"我们今天不工作。", en:"We don't work today."}, words:["idag", "inte", "jobbar", "vi"], answer:"Vi jobbar inte idag.", explain:{zh:"主语 + 动词 + inte + 其他成分。", en:"Subject + verb + inte + the rest."} }
     ]
   },
   {
@@ -2193,12 +2214,11 @@ const GRAMMAR_TOPICS = [
       }
     },
     exercises: [
-      { pre:"Jag är trött, ", post:" jag ska gå.", lemma:"men", gloss:{zh:"我累了，但我还是要走。", en:"I am tired, but I will go."}, answer:["men"], explain:{zh:"并列连词 men 表示转折。", en:"Coordinating men marks contrast."} },
-      { pre:"Jag vet ", post:" han kommer.", lemma:"att", gloss:{zh:"我知道他会来。", en:"I know that he is coming."}, answer:["att"], explain:{zh:"att 引导从句，从句为主语 + 动词。", en:"att introduces a clause with subject + verb order."} },
-      { pre:"Jag stannar hemma ", post:" det regnar.", lemma:"eftersom", gloss:{zh:"因为下雨，我待在家里。", en:"I stay at home because it is raining."}, answer:["eftersom"], explain:{zh:"eftersom 表示原因。", en:"eftersom marks reason."} },
-      { pre:"Hon säger att hon ", post:" kan komma.", lemma:"inte", gloss:{zh:"她说她不能来。", en:"She says that she cannot come."}, answer:["inte"], explain:{zh:"从句中 inte 在动词前。", en:"In subordinate clauses, inte comes before the verb."} },
-      { pre:"Jag vet inte ", post:" han bor.", lemma:"var", gloss:{zh:"我不知道他住在哪里。", en:"I do not know where he lives."}, answer:["var"], explain:{zh:"间接疑问：从句形式，动词不提前。", en:"Indirect question: clause order, no verb fronting."} },
-      { pre:"Om det regnar, ", post:" jag hemma.", lemma:"stanna", gloss:{zh:"如果下雨，我就待在家里。", en:"If it rains, I stay at home."}, answer:["stannar"], explain:{zh:"条件从句前置时，主句仍 V2。", en:"With a fronted conditional, the main clause still follows V2."} }
+      { type:"order", gloss:{zh:"我知道他会来。", en:"I know that he is coming."}, words:["kommer", "att", "han", "jag", "vet"], answer:"Jag vet att han kommer.", explain:{zh:"从句 att + 主语 + 动词（动词不提前）。", en:"Subordinate clause: att + subject + verb (no verb-first)."} },
+      { type:"order", gloss:{zh:"因为下雨，我待在家里。", en:"I stay home because it is raining."}, words:["regnar", "det", "eftersom", "hemma", "stannar", "jag"], answer:"Jag stannar hemma eftersom det regnar.", explain:{zh:"eftersom 引导从句，从句内是主语 + 动词。", en:"eftersom introduces a clause with subject + verb order."} },
+      { type:"order", gloss:{zh:"她说她不能来。", en:"She says that she can't come."}, words:["kan", "inte", "hon", "att", "säger", "hon", "komma"], answer:"Hon säger att hon inte kan komma.", explain:{zh:"从句中 inte 在动词前：hon inte kan…", en:"In a subordinate clause, inte comes before the verb: hon inte kan…"} },
+      { type:"order", gloss:{zh:"我不知道他住在哪里。", en:"I don't know where he lives."}, words:["bor", "han", "var", "inte", "vet", "jag"], answer:"Jag vet inte var han bor.", explain:{zh:"间接疑问句用从句语序，动词不提前。", en:"Indirect questions use subordinate order; the verb does not front."} },
+      { type:"order", gloss:{zh:"如果下雨，我就待在家里。", en:"If it rains, I stay home."}, words:["regnar", "det", "om", "hemma", "stannar", "jag"], answer:"Om det regnar, stannar jag hemma.", explain:{zh:"条件从句前置时，主句仍遵守 V2：stannar jag…", en:"With a fronted conditional clause, the main clause still keeps V2: stannar jag…"} }
     ]
   },
   {
@@ -2690,6 +2710,60 @@ function answersMatch(user, accepted){
   const list = Array.isArray(accepted) ? accepted : [accepted];
   return list.some(a => normalizeAns(a) === u);
 }
+function isOrderEx(ex){
+  return !!(ex && ex.type === "order" && Array.isArray(ex.words));
+}
+function shuffleIdx(n){
+  const a = Array.from({length:n}, (_,i)=>i);
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function normalizeOrderSentence(s){
+  return String(s||"")
+    .trim()
+    .toLowerCase()
+    .replace(/[.,!?;:，。？！]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function orderAnswersMatch(placedWords, answer){
+  return normalizeOrderSentence(placedWords.join(" ")) === normalizeOrderSentence(answer);
+}
+function ensureOrderState(topic){
+  if(!state.grammarOrder) state.grammarOrder = {};
+  const cur = state.grammarOrder[topic.id];
+  if(!cur || cur.length !== topic.exercises.length){
+    state.grammarOrder[topic.id] = topic.exercises.map(ex=>({
+      placed: [],
+      pool: shuffleIdx(ex.words.length),
+      checked: false,
+      ok: false
+    }));
+  }
+  return state.grammarOrder[topic.id];
+}
+function resetOrderState(topic){
+  if(!state.grammarOrder) state.grammarOrder = {};
+  state.grammarOrder[topic.id] = topic.exercises.map(ex=>({
+    placed: [],
+    pool: shuffleIdx(ex.words.length),
+    checked: false,
+    ok: false
+  }));
+}
+function saveOrderTopicScore(topic){
+  const st = state.grammarOrder[topic.id] || [];
+  if(!st.length || !st.every(x=>x.checked)) return;
+  let okc = 0;
+  st.forEach(x=>{ if(x.ok) okc++; });
+  const results = loadGrammarResults();
+  results[topic.id] = { score: okc, total: topic.exercises.length, at: Date.now() };
+  saveGrammarResults(results);
+  state.grammarChecked[topic.id] = true;
+}
 
 function renderGrammar(){
   const el = document.getElementById("tab-grammar");
@@ -2697,10 +2771,13 @@ function renderGrammar(){
   if(!state.grammarTopic) state.grammarTopic = GRAMMAR_TOPICS[0].id;
   if(!state.grammarAnswers) state.grammarAnswers = {};
   if(!state.grammarChecked) state.grammarChecked = {};
+  if(!state.grammarOrder) state.grammarOrder = {};
   const results = loadGrammarResults();
   const topic = GRAMMAR_TOPICS.find(x=>x.id===state.grammarTopic) || GRAMMAR_TOPICS[0];
   const sum = topic.summary[gLang()] || topic.summary.zh;
+  const orderMode = topic.exercises.every(isOrderEx);
   const checked = !!state.grammarChecked[topic.id];
+  const orderState = orderMode ? ensureOrderState(topic) : null;
 
   const nav = GRAMMAR_TOPICS.map(tp=>{
     const done = results[tp.id] ? `<span class="g-done">✓</span>` : "";
@@ -2730,35 +2807,89 @@ function renderGrammar(){
     </li>`).join("")}</ul>`;
 
   const answers = state.grammarAnswers[topic.id] || {};
-  const exHtml = topic.exercises.map((ex,i)=>{
-    const val = answers[i] != null ? answers[i] : "";
-    const gloss = gLang()==="en" ? (ex.gloss?.en || ex.gloss?.zh || "") : (ex.gloss?.zh || ex.gloss?.en || "");
-    let fb = "";
-    if(checked){
-      const ok = answersMatch(val, ex.answer);
-      const show = Array.isArray(ex.answer) ? ex.answer[0] : ex.answer;
-      fb = ok
-        ? `<div class="g-fb ok">${t("grammarCorrect")} · ${esc(show)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`
-        : `<div class="g-fb bad">${t("grammarAnswer")}${esc(show)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`;
-    }
-    const lemma = ex.lemma ? `<span class="g-lemma">( ${esc(ex.lemma)} )</span>` : "";
-    return `<div class="g-ex" data-ex="${i}">
-      <div class="g-ex-line">
-        <span class="g-sv">${esc(ex.pre || "")}</span>
-        <input type="text" class="g-input g-blank" data-ex="${i}" value="${esc(val)}" ${checked?"disabled":""} autocomplete="off" aria-label="${esc(ex.lemma || "answer")}" />
-        ${lemma ? " " + lemma : ""}
-        <span class="g-sv">${esc(ex.post || "")}</span>
-      </div>
-      ${gloss?`<div class="g-gloss">${esc(gloss)}</div>`:""}
-      ${fb}
-    </div>`;
-  }).join("");
+  let exHtml = "";
+  if(orderMode){
+    exHtml = topic.exercises.map((ex,i)=>{
+      const st = orderState[i];
+      const gloss = gLang()==="en" ? (ex.gloss?.en || ex.gloss?.zh || "") : (ex.gloss?.zh || ex.gloss?.en || "");
+      const slots = [];
+      for(let s=0;s<ex.words.length;s++){
+        if(st.placed[s] != null){
+          const wi = st.placed[s];
+          slots.push(`<button type="button" class="g-slot filled" data-ex="${i}" data-slot="${s}" ${st.checked?"disabled":""}>${esc(ex.words[wi])}</button>`);
+        } else {
+          slots.push(`<span class="g-slot empty" aria-hidden="true">·</span>`);
+        }
+      }
+      const bank = st.pool.map(wi=>
+        `<button type="button" class="g-chip" data-ex="${i}" data-wi="${wi}" ${st.checked?"disabled":""}>${esc(ex.words[wi])}</button>`
+      ).join("");
+      let fb = "";
+      let slotClass = "g-order-slots";
+      if(st.checked){
+        slotClass += st.ok ? " is-ok" : " is-bad";
+        fb = st.ok
+          ? `<div class="g-fb ok">${t("grammarCorrect")} · ${esc(ex.answer)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`
+          : `<div class="g-fb bad">${t("grammarWrong")} · ${t("grammarAnswer")}${esc(ex.answer)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`;
+      }
+      return `<div class="g-ex g-order" data-ex="${i}">
+        <div class="g-prompt">${esc(gloss)}</div>
+        <div class="${slotClass}" data-slots="${i}">${slots.join("")}</div>
+        <div class="g-order-bank" data-bank="${i}">${bank}</div>
+        <div class="g-order-actions">
+          <button type="button" class="btn btn-ghost" data-order-clear="${i}">${t("grammarClear")}</button>
+        </div>
+        ${fb}
+      </div>`;
+    }).join("");
+  } else {
+    exHtml = topic.exercises.map((ex,i)=>{
+      const val = answers[i] != null ? answers[i] : "";
+      const gloss = gLang()==="en" ? (ex.gloss?.en || ex.gloss?.zh || "") : (ex.gloss?.zh || ex.gloss?.en || "");
+      let fb = "";
+      if(checked){
+        const ok = answersMatch(val, ex.answer);
+        const show = Array.isArray(ex.answer) ? ex.answer[0] : ex.answer;
+        fb = ok
+          ? `<div class="g-fb ok">${t("grammarCorrect")} · ${esc(show)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`
+          : `<div class="g-fb bad">${t("grammarAnswer")}${esc(show)}</div><div class="g-explain">${esc(gText(ex.explain))}</div>`;
+      }
+      const lemma = ex.lemma ? `<span class="g-lemma">( ${esc(ex.lemma)} )</span>` : "";
+      return `<div class="g-ex" data-ex="${i}">
+        <div class="g-ex-line">
+          <span class="g-sv">${esc(ex.pre || "")}</span>
+          <input type="text" class="g-input g-blank" data-ex="${i}" value="${esc(val)}" ${checked?"disabled":""} autocomplete="off" aria-label="${esc(ex.lemma || "answer")}" />
+          ${lemma ? " " + lemma : ""}
+          <span class="g-sv">${esc(ex.post || "")}</span>
+        </div>
+        ${gloss?`<div class="g-gloss">${esc(gloss)}</div>`:""}
+        ${fb}
+      </div>`;
+    }).join("");
+  }
 
   let scoreBox = "";
-  if(checked){
+  if(orderMode){
+    if(orderState.every(x=>x.checked)){
+      const okc = orderState.filter(x=>x.ok).length;
+      scoreBox = `<div class="g-score">${t("grammarScore")}: ${okc} / ${topic.exercises.length}</div>`;
+    }
+  } else if(checked){
     let okc = 0;
     topic.exercises.forEach((ex,i)=>{ if(answersMatch(answers[i], ex.answer)) okc++; });
     scoreBox = `<div class="g-score">${t("grammarScore")}: ${okc} / ${topic.exercises.length}</div>`;
+  }
+
+  const hint = orderMode ? t("grammarOrderHint") : t("grammarFillHint");
+  let actions = "";
+  if(orderMode){
+    if(orderState.every(x=>x.checked)){
+      actions = `<button type="button" class="btn btn-accent" id="btnGrammarRetry">${t("grammarRetry")}</button>`;
+    }
+  } else {
+    actions = checked
+      ? `<button type="button" class="btn btn-accent" id="btnGrammarRetry">${t("grammarRetry")}</button>`
+      : `<button type="button" class="btn btn-primary" id="btnGrammarSubmit">${t("grammarSubmit")}</button>`;
   }
 
   el.innerHTML = `<div class="grammar-layout">
@@ -2777,13 +2908,11 @@ function renderGrammar(){
       </div>
       <div class="card">
         <h3>${t("grammarPractice")}</h3>
-        <p class="progress">${t("grammarFillHint")}</p>
+        <p class="progress">${esc(hint)}</p>
         <div id="grammarExList">${exHtml}</div>
         ${scoreBox}
         <div class="actions" style="margin-top:1rem;justify-content:flex-start">
-          ${checked
-            ? `<button type="button" class="btn btn-accent" id="btnGrammarRetry">${t("grammarRetry")}</button>`
-            : `<button type="button" class="btn btn-primary" id="btnGrammarSubmit">${t("grammarSubmit")}</button>`}
+          ${actions}
         </div>
       </div>
     </div>
@@ -2795,29 +2924,85 @@ function renderGrammar(){
       renderGrammar();
     });
   });
-  el.querySelectorAll(".g-input").forEach(inp=>{
-    inp.addEventListener("input", ()=>{
-      if(!state.grammarAnswers[topic.id]) state.grammarAnswers[topic.id] = {};
-      state.grammarAnswers[topic.id][+inp.dataset.ex] = inp.value;
+
+  if(orderMode){
+    el.querySelectorAll(".g-chip").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = +btn.dataset.ex;
+        const wi = +btn.dataset.wi;
+        const st = state.grammarOrder[topic.id][i];
+        if(st.checked) return;
+        const p = st.pool.indexOf(wi);
+        if(p < 0) return;
+        st.pool.splice(p, 1);
+        st.placed.push(wi);
+        if(st.placed.length === topic.exercises[i].words.length){
+          const placedWords = st.placed.map(idx => topic.exercises[i].words[idx]);
+          st.ok = orderAnswersMatch(placedWords, topic.exercises[i].answer);
+          st.checked = true;
+          saveOrderTopicScore(topic);
+        }
+        renderGrammar();
+      });
     });
-  });
-  el.querySelector("#btnGrammarSubmit")?.addEventListener("click", ()=>{
-    const map = {};
-    el.querySelectorAll(".g-input").forEach(inp=>{ map[+inp.dataset.ex] = inp.value; });
-    state.grammarAnswers[topic.id] = map;
-    let okc = 0;
-    topic.exercises.forEach((ex,i)=>{ if(answersMatch(map[i], ex.answer)) okc++; });
-    const results = loadGrammarResults();
-    results[topic.id] = { score: okc, total: topic.exercises.length, at: Date.now() };
-    saveGrammarResults(results);
-    state.grammarChecked[topic.id] = true;
-    renderGrammar();
-  });
-  el.querySelector("#btnGrammarRetry")?.addEventListener("click", ()=>{
-    state.grammarChecked[topic.id] = false;
-    state.grammarAnswers[topic.id] = {};
-    renderGrammar();
-  });
+    el.querySelectorAll(".g-slot.filled").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = +btn.dataset.ex;
+        const slot = +btn.dataset.slot;
+        const st = state.grammarOrder[topic.id][i];
+        if(st.checked) return;
+        const wi = st.placed[slot];
+        if(wi == null) return;
+        st.placed.splice(slot, 1);
+        const poolCopy = st.pool.concat([wi]);
+        st.pool = shuffleIdx(poolCopy.length).map(k => poolCopy[k]);
+        renderGrammar();
+      });
+    });
+    el.querySelectorAll("[data-order-clear]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = +btn.dataset.orderClear;
+        const ex = topic.exercises[i];
+        state.grammarOrder[topic.id][i] = {
+          placed: [],
+          pool: shuffleIdx(ex.words.length),
+          checked: false,
+          ok: false
+        };
+        state.grammarChecked[topic.id] = false;
+        renderGrammar();
+      });
+    });
+    el.querySelector("#btnGrammarRetry")?.addEventListener("click", ()=>{
+      resetOrderState(topic);
+      state.grammarChecked[topic.id] = false;
+      renderGrammar();
+    });
+  } else {
+    el.querySelectorAll(".g-input").forEach(inp=>{
+      inp.addEventListener("input", ()=>{
+        if(!state.grammarAnswers[topic.id]) state.grammarAnswers[topic.id] = {};
+        state.grammarAnswers[topic.id][+inp.dataset.ex] = inp.value;
+      });
+    });
+    el.querySelector("#btnGrammarSubmit")?.addEventListener("click", ()=>{
+      const map = {};
+      el.querySelectorAll(".g-input").forEach(inp=>{ map[+inp.dataset.ex] = inp.value; });
+      state.grammarAnswers[topic.id] = map;
+      let okc = 0;
+      topic.exercises.forEach((ex,i)=>{ if(answersMatch(map[i], ex.answer)) okc++; });
+      const results2 = loadGrammarResults();
+      results2[topic.id] = { score: okc, total: topic.exercises.length, at: Date.now() };
+      saveGrammarResults(results2);
+      state.grammarChecked[topic.id] = true;
+      renderGrammar();
+    });
+    el.querySelector("#btnGrammarRetry")?.addEventListener("click", ()=>{
+      state.grammarChecked[topic.id] = false;
+      state.grammarAnswers[topic.id] = {};
+      renderGrammar();
+    });
+  }
 }
 
 /* ========== INIT ========== */

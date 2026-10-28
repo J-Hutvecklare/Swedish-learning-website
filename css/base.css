@@ -1,0 +1,31 @@
+/* 变量、重置、字体、基础样式 */
+:root{
+  /* Light — Swedish blue identity */
+  --blue:#006aa7; --yellow:#fecc00; --blue-d:#004d7a; --blue-s:#e7f3fa;
+  --text:#1a2332; --muted:#5c6b7a; --border:#cfdce8; --bg:#f3f8fc; --card:#fff;
+  --ok:#1b7a4c; --bad:#c0392b; --radius:16px;
+  --accent:#006aa7; --accent-soft:#e7f3fa; --cta:#fecc00; --cta-text:#004d7a;
+  --input-bg:#fff; --shadow:0 8px 28px rgba(0,106,167,.08); --grid-line:rgba(0,106,167,.055);
+  --nav-border:var(--border);
+  --font:"Segoe UI",system-ui,"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --fs-hero:clamp(42px,12vw,72px);
+  --fs-section:22px;
+  --fs-card:17px;
+  --fs-body:15px;
+  --fs-help:13px;
+  --fs-sv:18px;
+  --fs-ex:14px;
+  --fs-flash:clamp(36px,7vw,48px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);font-size:var(--fs-body);color:var(--text);min-height:100vh;line-height:1.55;
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    radial-gradient(ellipse 90% 55% at 0% -10%,rgba(254,204,0,.18),transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 0%,rgba(0,106,167,.12),transparent 50%);
+  background-size:48px 48px,48px 48px,auto,auto;
+  background-attachment:fixed}
+footer{text-align:center;margin-top:2rem;font-size:var(--fs-help);color:var(--muted)}
+.lang-label{font-size:var(--fs-help);font-weight:700;color:var(--muted);margin-right:.25rem}
